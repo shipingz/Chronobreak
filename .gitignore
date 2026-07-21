@@ -164,3 +164,6 @@ Desktop.ini
 *.log
 *.crashdump
 *.dmp
+
+# ==================== 外部资源 / 素材库 ====================
+External Resources/

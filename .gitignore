@@ -1,0 +1,166 @@
+# ============================================================
+# Chronobreak — .gitignore
+# 代码作品集配置：只追踪代码+场景+配置，忽略所有大文件资源
+# ============================================================
+
+# ==================== Unity 系统目录 ====================
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Mm]emoryCaptures/
+
+# ==================== 大文件资源 & 配套 .meta ====================
+# 作品集只跟踪代码（.cs）和文本配置，所有二进制资源全忽略
+
+# 图片
+*.png
+*.png.meta
+*.jpg
+*.jpg.meta
+*.jpeg
+*.jpeg.meta
+*.gif
+*.gif.meta
+*.bmp
+*.bmp.meta
+*.tga
+*.tga.meta
+*.tif
+*.tiff
+*.tif.meta
+*.tiff.meta
+*.psd
+*.psd.meta
+*.psb
+*.psb.meta
+*.exr
+*.exr.meta
+*.hdr
+*.hdr.meta
+*.ico
+*.ico.meta
+*.svg
+*.svg.meta
+
+# 3D 模型
+*.fbx
+*.fbx.meta
+*.obj
+*.obj.meta
+*.blend
+*.blend.meta
+*.dae
+*.dae.meta
+*.3ds
+*.3ds.meta
+*.max
+*.max.meta
+*.ma
+*.ma.meta
+*.mb
+*.mb.meta
+*.c4d
+*.c4d.meta
+
+# 音频
+*.mp3
+*.mp3.meta
+*.wav
+*.wav.meta
+*.ogg
+*.ogg.meta
+*.aiff
+*.aiff.meta
+*.aif
+*.aif.meta
+*.flac
+*.flac.meta
+*.wma
+*.wma.meta
+*.m4a
+*.m4a.meta
+*.mid
+*.mid.meta
+*.midi
+*.midi.meta
+
+# 视频
+*.mp4
+*.mp4.meta
+*.avi
+*.avi.meta
+*.mov
+*.mov.meta
+*.mkv
+*.mkv.meta
+*.webm
+*.webm.meta
+*.wmv
+*.wmv.meta
+*.flv
+*.flv.meta
+
+# 字体
+*.ttf
+*.ttf.meta
+*.otf
+*.otf.meta
+*.fon
+*.fon.meta
+
+# 材质贴图压缩格式
+*.dds
+*.dds.meta
+*.pvr
+*.pvr.meta
+*.ktx
+*.ktx.meta
+
+# ==================== 编译产物 / 可执行文件 ====================
+*.exe
+*.exe.meta
+*.dll
+*.dll.meta
+*.pdb
+*.pdb.meta
+*.so
+*.so.meta
+*.dylib
+*.dylib.meta
+*.bundle
+*.bundle.meta
+*.apk
+*.apk.meta
+*.aab
+*.aab.meta
+*.ipa
+*.ipa.meta
+
+# ==================== IDE / 编辑器设置 ====================
+.vscode/
+.idea/
+*.csproj
+*.csproj.meta
+*.sln
+*.user
+*.userosscache
+*.suo
+*.sln.docstates
+
+# .slnx 保留（Unity 6 使用，但如果你用 VS/VSCode 打开会生成）
+# 如果不需要可以取消注释下一行：
+# *.slnx
+
+# ==================== 操作系统文件 ====================
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ==================== 日志 / 崩溃转储 ====================
+*.log
+*.crashdump
+*.dmp

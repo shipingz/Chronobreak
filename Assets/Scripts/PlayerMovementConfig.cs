@@ -42,4 +42,24 @@ public class PlayerMovementConfig : ScriptableObject
 
     [Tooltip("下落时重力倍率（1=正常，>1 下落更快）")]
     public float fallGravityMultiplier = 1.15f;
+
+    [Header("Coyote Time & 跳跃缓冲")]
+    [Tooltip("离开地面后仍可跳跃的时间（秒）。经典值 0.1s")]
+    public float coyoteTime = 0.1f;
+
+    [Tooltip("落地前按下跳跃的缓存时间（秒）。经典值 0.05s")]
+    public float jumpBufferTime = 0.05f;
+
+    [Header("冲刺")]
+    [Tooltip("冲刺距离（units）")]
+    public float dashDistance = 3f;
+
+    [Tooltip("冲刺时长（秒）")]
+    public float dashDuration = 0.2f;
+
+    [Tooltip("冲刺冷却时间（秒）")]
+    public float dashCooldown = 0.8f;
+
+    [Tooltip("冲刺无敌时间（秒），冲刺前段生效")]
+    public float dashInvincibilityTime = 0.15f;
 }

@@ -21,6 +21,8 @@ MonoBehaviour:
   groundLayer:
     serializedVersion: 2
     m_Bits: 8
-  jumpForce: 6.5
+  jumpForce: 7
   variableJumpGravityScale: 0.9
-  fallGravityMultiplier: 1.6
+  fallGravityMultiplier: 1.8
+  coyoteTime: 0.1
+  jumpBufferTime: 0.1

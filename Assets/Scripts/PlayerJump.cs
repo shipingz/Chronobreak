@@ -18,8 +18,15 @@ public class PlayerJump : MonoBehaviour
     // 重力
     private float defaultGravity;
 
-    // 地面检测
-    private Collider2D col;
+    // 碰撞体缓存
+    private Collider2D cachedCollider;
+
+    // Coyote Time & 跳跃缓冲
+    private float coyoteTimer;
+    private float jumpBufferTimer;
+
+    // 缓存引用
+    private PlayerDash cachedPlayerDash;
 
     // ============================================================
     // 生命周期
@@ -29,7 +36,8 @@ public class PlayerJump : MonoBehaviour
     {
         input = new InputSystem_Actions();
         if (rb == null) rb = GetComponent<Rigidbody2D>();
-        col = GetComponent<Collider2D>();
+        cachedCollider = GetComponent<Collider2D>();
+        cachedPlayerDash = GetComponent<PlayerDash>();
 
         defaultGravity = rb.gravityScale;
     }
@@ -55,6 +63,7 @@ public class PlayerJump : MonoBehaviour
 
     private void FixedUpdate()
     {
+        UpdateTimers();
         HandleVariableJump();
         ClampFallSpeed();
         ResetGravityWhenGrounded();
@@ -66,11 +75,16 @@ public class PlayerJump : MonoBehaviour
 
     private void OnJumpStarted(InputAction.CallbackContext ctx)
     {
-        if (!IsGrounded()) return;
-
-        // 施加向上的初速度
-        rb.linearVelocity = new Vector2(rb.linearVelocity.x, config.jumpForce);
-        jumpHeld = true;
+        if (IsGrounded() || coyoteTimer > 0f)
+        {
+            // 在地面或 Coyote Time 窗口内 → 直接跳
+            PerformJump();
+        }
+        else
+        {
+            // 在空中 → 缓存跳跃请求，落地时自动触发
+            jumpBufferTimer = config.jumpBufferTime;
+        }
     }
 
     private void OnJumpCanceled(InputAction.CallbackContext ctx)
@@ -85,11 +99,56 @@ public class PlayerJump : MonoBehaviour
     }
 
     // ============================================================
+    // 跳跃执行（Coyote / 缓冲 共用入口）
+    // ============================================================
+
+    private void PerformJump()
+    {
+        rb.linearVelocity = new Vector2(rb.linearVelocity.x, config.jumpForce);
+        coyoteTimer = 0f;
+        jumpBufferTimer = 0f;
+
+        // 同步按键状态：缓冲触发时 jumpHeld 还未设为 true
+        if (input.Player.Jump.IsPressed())
+        {
+            jumpHeld = true;
+        }
+    }
+
+    // ============================================================
+    // Coyote Time & 跳跃缓冲 计时
+    // ============================================================
+
+    private void UpdateTimers()
+    {
+        if (IsGrounded())
+        {
+            coyoteTimer = config.coyoteTime;
+        }
+        else
+        {
+            coyoteTimer = Mathf.Max(0f, coyoteTimer - Time.fixedDeltaTime);
+        }
+
+        if (jumpBufferTimer > 0f)
+        {
+            jumpBufferTimer -= Time.fixedDeltaTime;
+            if (IsGrounded())
+            {
+                PerformJump();
+            }
+        }
+    }
+
+    // ============================================================
     // 变跳高度 & 下落加速
     // ============================================================
 
     private void HandleVariableJump()
     {
+        // 冲刺期间不干预重力
+        if (cachedPlayerDash?.IsDashing == true) return;
+
         // 长按期间减少重力 → 跳得更高
         if (jumpHeld && rb.linearVelocity.y > 0f)
         {
@@ -124,6 +183,9 @@ public class PlayerJump : MonoBehaviour
 
     private void ResetGravityWhenGrounded()
     {
+        // 冲刺期间不干预重力
+        if (cachedPlayerDash?.IsDashing == true) return;
+
         if (IsGrounded() && rb.linearVelocity.y <= 0f)
         {
             rb.gravityScale = defaultGravity;
@@ -136,12 +198,22 @@ public class PlayerJump : MonoBehaviour
 
     private bool IsGrounded()
     {
-        Vector2 origin = new Vector2(transform.position.x, col.bounds.min.y);
-        RaycastHit2D hit = Physics2D.Raycast(
-            origin, Vector2.down,
-            config.groundCheckDistance,
-            config.groundLayer
+        if (cachedCollider == null) return false;
+
+        // 从碰撞体底部的左右两端分别向下发射射线
+        float leftX = cachedCollider.bounds.min.x + 0.05f;
+        float rightX = cachedCollider.bounds.max.x - 0.05f;
+        float footY = cachedCollider.bounds.min.y;
+
+        RaycastHit2D hitLeft = Physics2D.Raycast(
+            new Vector2(leftX, footY), Vector2.down,
+            config.groundCheckDistance, config.groundLayer
         );
-        return hit.collider != null;
+        RaycastHit2D hitRight = Physics2D.Raycast(
+            new Vector2(rightX, footY), Vector2.down,
+            config.groundCheckDistance, config.groundLayer
+        );
+
+        return hitLeft.collider != null || hitRight.collider != null;
     }
 }

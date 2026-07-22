@@ -20,6 +20,10 @@ public class PlayerController : MonoBehaviour
     // 状态
     private bool isGrounded;
 
+    // 缓存引用
+    private Collider2D cachedCollider;
+    private PlayerDash cachedPlayerDash;
+
     // ============================================================
     // 生命周期
     // ============================================================
@@ -28,6 +32,8 @@ public class PlayerController : MonoBehaviour
     {
         input = new InputSystem_Actions();
         spriteRenderer = GetComponent<SpriteRenderer>();
+        cachedCollider = GetComponent<Collider2D>();
+        cachedPlayerDash = GetComponent<PlayerDash>();
 
         if (rb == null) rb = GetComponent<Rigidbody2D>();
         if (config == null)
@@ -57,19 +63,25 @@ public class PlayerController : MonoBehaviour
 
     private void CheckGrounded()
     {
-        // 从碰撞体底部向下发射射线
-        Collider2D col = GetComponent<Collider2D>();
-        Vector2 origin = new Vector2(transform.position.x, col.bounds.min.y);
+        if (cachedCollider == null) return;
+
+        // 从碰撞体底部的左右两端分别向下发射射线
+        // 单根中线可能因平台边缘刚好在脚底中间而漏过
+        float leftX = cachedCollider.bounds.min.x + 0.05f;
+        float rightX = cachedCollider.bounds.max.x - 0.05f;
+        float footY = cachedCollider.bounds.min.y;
         float rayLength = config.groundCheckDistance;
 
-        RaycastHit2D hit = Physics2D.Raycast(
-            origin,
-            Vector2.down,
-            rayLength,
-            config.groundLayer
+        RaycastHit2D hitLeft = Physics2D.Raycast(
+            new Vector2(leftX, footY),
+            Vector2.down, rayLength, config.groundLayer
+        );
+        RaycastHit2D hitRight = Physics2D.Raycast(
+            new Vector2(rightX, footY),
+            Vector2.down, rayLength, config.groundLayer
         );
 
-        isGrounded = hit.collider != null;
+        isGrounded = hitLeft.collider != null || hitRight.collider != null;
     }
 
     // ============================================================
@@ -78,6 +90,9 @@ public class PlayerController : MonoBehaviour
 
     private void HandleHorizontalMovement()
     {
+        // 冲刺期间不干涉，由 PlayerDash 接管水平速度
+        if (cachedPlayerDash?.IsDashing == true) return;
+
         float targetSpeed = moveInput.x * config.maxSpeed;
 
         // 速度差 = 目标速度 - 当前速度
@@ -117,11 +132,24 @@ public class PlayerController : MonoBehaviour
     {
         if (config == null) return;
 
-        // 画出地面检测射线
+        // 优先用缓存的碰撞体（运行时），回退到 GetComponent（Edit Mode）
+        Collider2D col = cachedCollider;
+        if (col == null) col = GetComponent<Collider2D>();
+        if (col == null) return;
+
+        // 与 CheckGrounded() 保持一致的检测：脚底左右两端
+        float leftX = col.bounds.min.x + 0.05f;
+        float rightX = col.bounds.max.x - 0.05f;
+        float footY = col.bounds.min.y;
+
         Gizmos.color = isGrounded ? Color.green : Color.red;
-        Gizmos.DrawLine(
-            transform.position,
-            transform.position + Vector3.down * config.groundCheckDistance
-        );
+
+        Vector2 leftOrigin = new Vector2(leftX, footY);
+        Gizmos.DrawLine(leftOrigin, leftOrigin + Vector2.down * config.groundCheckDistance);
+        Gizmos.DrawSphere(leftOrigin, 0.05f);
+
+        Vector2 rightOrigin = new Vector2(rightX, footY);
+        Gizmos.DrawLine(rightOrigin, rightOrigin + Vector2.down * config.groundCheckDistance);
+        Gizmos.DrawSphere(rightOrigin, 0.05f);
     }
 }

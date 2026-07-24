@@ -53,6 +53,7 @@ public class PlayerController : MonoBehaviour
     private void FixedUpdate()
     {
         CheckGrounded();
+        FlipSpriteTowardsMovement();
         HandleHorizontalMovement();
         ClampFallSpeed();
     }
@@ -122,6 +123,16 @@ public class PlayerController : MonoBehaviour
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, -config.maxFallSpeed);
         }
+    }
+
+    // ============================================================
+    // 精灵翻转
+    // ============================================================
+
+    private void FlipSpriteTowardsMovement()
+    {
+        if (moveInput.x != 0f)
+            spriteRenderer.flipX = moveInput.x < 0f;
     }
 
     // ============================================================

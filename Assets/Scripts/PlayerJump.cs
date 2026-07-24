@@ -27,6 +27,7 @@ public class PlayerJump : MonoBehaviour
 
     // 缓存引用
     private PlayerDash cachedPlayerDash;
+    private PlayerAnimator playerAnimator;
 
     // ============================================================
     // 生命周期
@@ -39,6 +40,7 @@ public class PlayerJump : MonoBehaviour
         cachedCollider = GetComponent<Collider2D>();
         cachedPlayerDash = GetComponent<PlayerDash>();
 
+        playerAnimator = GetComponent<PlayerAnimator>();
         defaultGravity = rb.gravityScale;
     }
 
@@ -107,6 +109,7 @@ public class PlayerJump : MonoBehaviour
         rb.linearVelocity = new Vector2(rb.linearVelocity.x, config.jumpForce);
         coyoteTimer = 0f;
         jumpBufferTimer = 0f;
+        playerAnimator?.TriggerJump();
 
         // 同步按键状态：缓冲触发时 jumpHeld 还未设为 true
         if (input.Player.Jump.IsPressed())
@@ -196,7 +199,7 @@ public class PlayerJump : MonoBehaviour
     // 地面检测
     // ============================================================
 
-    private bool IsGrounded()
+    public bool IsGrounded()
     {
         if (cachedCollider == null) return false;
 

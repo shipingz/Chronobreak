@@ -1205,6 +1205,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5302020247983178637, guid: 5be15840eefafad4d8273cfa5288c7d7, type: 3}
+      propertyPath: showGizmo
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8544475719277809006, guid: 5be15840eefafad4d8273cfa5288c7d7, type: 3}
       propertyPath: m_Name
       value: TempPlayer
@@ -1302,7 +1306,7 @@ Transform:
   m_GameObject: {fileID: 1272732727}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 4.062233, y: 1.7027154, z: -10}
+  m_LocalPosition: {x: 4.0654907, y: 1.7027154, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

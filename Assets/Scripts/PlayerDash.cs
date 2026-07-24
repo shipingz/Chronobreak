@@ -29,6 +29,8 @@ public class PlayerDash : MonoBehaviour
     private bool originalIsTrigger; // 记录冲刺前的 isTrigger 状态，结束时恢复
     private bool triggerActivatedThisDash; // 标记本轮冲刺是否已打开 Trigger
 
+    private bool dashQueued;
+
     // 公开状态供其他组件查询（PlayerJump/PlayerHealth）
     public bool IsDashing => isDashing;
     public bool IsInvincible => isDashing && dashTimer > config.dashDuration - config.dashInvincibilityTime;
@@ -88,6 +90,13 @@ public class PlayerDash : MonoBehaviour
         {
             cooldownTimer -= Time.fixedDeltaTime;
         }
+
+        // 队列冲刺：冷却结束自动触发
+        if (!isDashing && dashQueued && cooldownTimer <= 0f)
+        {
+            dashQueued = false;
+            StartDash();
+        }
     }
 
     // ============================================================
@@ -96,7 +105,16 @@ public class PlayerDash : MonoBehaviour
 
     private void OnDashStarted(InputAction.CallbackContext ctx)
     {
-        if (isDashing || cooldownTimer > 0f) return;
+        // 冲刺中 → 忽略
+        if (isDashing) return;
+
+        // 冷却中 → 看是否在队列窗口内
+        if (cooldownTimer > 0f)
+        {
+            if (cooldownTimer <= config.dashQueueWindow)
+                dashQueued = true;
+            return;
+        }
 
         // 确定冲刺方向：优先移动输入，回退到精灵朝向
         dashDirection = (int)Mathf.Sign(moveInput.x);

@@ -62,4 +62,7 @@ public class PlayerMovementConfig : ScriptableObject
 
     [Tooltip("冲刺无敌时间（秒），冲刺前段生效")]
     public float dashInvincibilityTime = 0.15f;
+
+    [Tooltip("冷却结束前多少秒内的输入会被队列缓冲（冲刺手感调优）")]
+    public float dashQueueWindow = 0.2f;
 }

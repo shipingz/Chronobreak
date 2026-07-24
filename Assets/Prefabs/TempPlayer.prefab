@@ -17,6 +17,7 @@ GameObject:
   - component: {fileID: 6851892915227740409}
   - component: {fileID: 6039409151911653489}
   - component: {fileID: 7809455804028041726}
+  - component: {fileID: 5302020247983178637}
   m_Layer: 0
   m_Name: TempPlayer
   m_TagString: Untagged
@@ -248,3 +249,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dbba7338affbef4468aa61e974ad0daf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerAnimator
+--- !u!114 &5302020247983178637
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8544475719277809006}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e6e89cb1440d9ed48b367bc374f1a22d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerAttack
+  config: {fileID: 11400000, guid: dc66e0412a0a650409ae2b8963edfc50, type: 2}
+  gizmoIdleColor: {r: 1, g: 0.6, b: 0, a: 0.25}
+  gizmoActiveColor: {r: 1, g: 0, b: 0, a: 0.5}
+  showGizmo: 0

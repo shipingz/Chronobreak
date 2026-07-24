@@ -644,7 +644,7 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
                 },
                 {
                     ""name"": """",
-                    ""id"": ""dash-kb-0001-0000-000000000001"",
+                    ""id"": ""1e39346b-b1fd-43a3-a106-0a86570337b8"",
                     ""path"": ""<Keyboard>/leftShift"",
                     ""interactions"": """",
                     ""processors"": """",
@@ -655,7 +655,7 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
                 },
                 {
                     ""name"": """",
-                    ""id"": ""dash-gp-0001-0000-000000000002"",
+                    ""id"": ""af18fbb2-9dae-40c6-9a57-e183c98d01ef"",
                     ""path"": ""<Gamepad>/leftShoulder"",
                     ""interactions"": """",
                     ""processors"": """",

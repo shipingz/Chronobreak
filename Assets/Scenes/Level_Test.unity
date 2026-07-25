@@ -2045,14 +2045,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: Goblin
       objectReference: {fileID: 0}
-    - target: {fileID: 3600610528139306118, guid: e019bb98ef49a894d85074819400a34f, type: 3}
-      propertyPath: showGizmo
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6576768031995420671, guid: e019bb98ef49a894d85074819400a34f, type: 3}
-      propertyPath: m_GravityScale
-      value: 1
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

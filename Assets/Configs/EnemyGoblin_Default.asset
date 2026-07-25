@@ -18,6 +18,8 @@ MonoBehaviour:
   detectionRange: 5
   attackRange: 1.5
   attackDamage: 15
+  knockbackForce: 4
+  knockbackUpwardForce: 3
   attackInterval: 1.5
   attackHitDelay: 0.5
   patrolRadius: 8

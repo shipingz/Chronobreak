@@ -50,6 +50,10 @@ public class PlayerMovementConfig : ScriptableObject
     [Tooltip("落地前按下跳跃的缓存时间（秒）。经典值 0.05s")]
     public float jumpBufferTime = 0.05f;
 
+    [Tooltip("跳跃松手时速度保留倍率（0=立即下落，1=不砍速）。经典值 0.5 实现变跳高度")]
+    [Range(0f, 1f)]
+    public float jumpCutMultiplier = 0.5f;
+
     [Header("冲刺")]
     [Tooltip("冲刺距离（units）")]
     public float dashDistance = 3f;
@@ -65,4 +69,9 @@ public class PlayerMovementConfig : ScriptableObject
 
     [Tooltip("冷却结束前多少秒内的输入会被队列缓冲（冲刺手感调优）")]
     public float dashQueueWindow = 0.2f;
+
+    [Tooltip("冲刺结束时保留的水平速度倍率（0=急停，1=惯性滑行）。经典值 0.5")]
+    [Range(0f, 1f)]
+    public float dashEndInertia = 0.5f;
+
 }

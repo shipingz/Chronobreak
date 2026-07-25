@@ -18,6 +18,9 @@ public class PlayerAttack : MonoBehaviour
     [Header("配置")]
     [SerializeField] private PlayerAttackConfig config;
 
+    [Header("角色属性")]
+    [SerializeField] private PlayerConfig playerConfig;
+
     [Header("Gizmo")]
     [SerializeField] private Color gizmoIdleColor = new Color(1f, 0.6f, 0f, 0.25f);
     [SerializeField] private Color gizmoActiveColor = new Color(1f, 0f, 0f, 0.5f);
@@ -32,6 +35,7 @@ public class PlayerAttack : MonoBehaviour
     private SpriteRenderer spriteRenderer;
     private Collider2D cachedCollider;
     private InputSystem_Actions input;
+    private PlayerHealth playerHealth;
 
     // ============================================================
     // 状态
@@ -57,6 +61,7 @@ public class PlayerAttack : MonoBehaviour
         playerDash = GetComponent<PlayerDash>();
         spriteRenderer = GetComponent<SpriteRenderer>();
         cachedCollider = GetComponent<Collider2D>();
+        playerHealth = GetComponent<PlayerHealth>();
 
         input = new InputSystem_Actions();
 
@@ -148,6 +153,9 @@ public class PlayerAttack : MonoBehaviour
 
     private void OnAttackStarted(InputAction.CallbackContext ctx)
     {
+        // 硬直中不能攻击
+        if (playerHealth != null && playerHealth.IsStunned) return;
+
         // 可攻击 → 立刻打
         if (!isAttacking && cooldownTimer <= 0f && !playerDash.IsDashing)
         {
@@ -213,12 +221,16 @@ public class PlayerAttack : MonoBehaviour
 
             // 命中反馈
             IDamageable damageable = hit.GetComponent<IDamageable>();
-            if (damageable != null)
+            if (damageable != null && playerConfig != null)
             {
                 float facing = spriteRenderer != null && spriteRenderer.flipX ? -1f : 1f;
-                Vector2 knockback = new Vector2(facing * config.knockbackForce, config.knockbackUpwardForce);
-                damageable.TakeDamage(config.damage, knockback);
-                Debug.Log($"玩家攻击 → {hit.name}，造成 {config.damage} 伤害");
+                Vector2 knockback = new Vector2(facing * playerConfig.knockbackForce, playerConfig.knockbackUpwardForce);
+                damageable.TakeDamage(playerConfig.attackDamage, knockback);
+                Debug.Log($"玩家攻击 → {hit.name}，造成 {playerConfig.attackDamage} 伤害");
+            }
+            else if (playerConfig == null)
+            {
+                Debug.LogWarning("PlayerConfig 未赋值，攻击无法造成伤害", this);
             }
         }
     }

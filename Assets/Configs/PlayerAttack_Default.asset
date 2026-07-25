@@ -17,7 +17,7 @@ MonoBehaviour:
   hitboxVerticalOffset: 0
   damage: 20
   knockbackForce: 4
-  knockbackUpwardForce: 3.02
+  knockbackUpwardForce: 3
   hitDelay: 0.15
   hitActiveDuration: 0.1
   cooldown: 0.2

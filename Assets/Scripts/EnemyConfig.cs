@@ -30,6 +30,12 @@ public class EnemyConfig : ScriptableObject
     [Tooltip("每次攻击对玩家造成的伤害")]
     public int attackDamage = 15;
 
+    [Tooltip("攻击命中玩家的横向击退力度")]
+    public float knockbackForce = 3f;
+
+    [Tooltip("攻击命中玩家的向上击退力度")]
+    public float knockbackUpwardForce = 2f;
+
     [Tooltip("攻击间隔（秒，含前后摇）")]
     public float attackInterval = 1.5f;
 

@@ -28,6 +28,7 @@ public class PlayerJump : MonoBehaviour
     // 缓存引用
     private PlayerDash cachedPlayerDash;
     private PlayerAnimator playerAnimator;
+    private PlayerHealth playerHealth;
 
     // ============================================================
     // 生命周期
@@ -41,6 +42,7 @@ public class PlayerJump : MonoBehaviour
         cachedPlayerDash = GetComponent<PlayerDash>();
 
         playerAnimator = GetComponent<PlayerAnimator>();
+        playerHealth = GetComponent<PlayerHealth>();
         defaultGravity = rb.gravityScale;
     }
 
@@ -77,6 +79,9 @@ public class PlayerJump : MonoBehaviour
 
     private void OnJumpStarted(InputAction.CallbackContext ctx)
     {
+        // 硬直中不能跳跃
+        if (playerHealth != null && playerHealth.IsStunned) return;
+
         if (IsGrounded() || coyoteTimer > 0f)
         {
             // 在地面或 Coyote Time 窗口内 → 直接跳
@@ -96,7 +101,7 @@ public class PlayerJump : MonoBehaviour
         // 松手时如果还在上升 → 砍速度，实现变跳高度
         if (rb.linearVelocity.y > 0f)
         {
-            rb.linearVelocity = new Vector2(rb.linearVelocity.x, rb.linearVelocity.y * 0.5f);
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, rb.linearVelocity.y * config.jumpCutMultiplier);
         }
     }
 

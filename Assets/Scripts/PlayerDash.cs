@@ -19,6 +19,7 @@ public class PlayerDash : MonoBehaviour
     // 碰撞体缓存
     private Collider2D cachedCollider;
     private SpriteRenderer cachedSpriteRenderer;
+    private PlayerHealth playerHealth;
 
     // 冲刺状态
     private bool isDashing;
@@ -54,6 +55,7 @@ public class PlayerDash : MonoBehaviour
         cachedSpriteRenderer = GetComponent<SpriteRenderer>();
 
         originalGravity = rb.gravityScale;
+        playerHealth = GetComponent<PlayerHealth>();
     }
 
     private void OnEnable()
@@ -105,6 +107,9 @@ public class PlayerDash : MonoBehaviour
 
     private void OnDashStarted(InputAction.CallbackContext ctx)
     {
+        // 硬直中不能冲刺
+        if (playerHealth != null && playerHealth.IsStunned) return;
+
         // 冲刺中 → 忽略
         if (isDashing) return;
 
@@ -190,7 +195,7 @@ public class PlayerDash : MonoBehaviour
             cachedCollider.isTrigger = originalIsTrigger;
 
         // 保留少量水平惯性（防止突然卡死）
-        rb.linearVelocity = new Vector2(rb.linearVelocity.x * 0.5f, 0f);
+        rb.linearVelocity = new Vector2(rb.linearVelocity.x * config.dashEndInertia, 0f);
     }
 
     // ============================================================

@@ -284,7 +284,7 @@ public class EnemyStateMachine : MonoBehaviour
         if (damageable != null)
         {
             float facing = spriteRenderer != null && spriteRenderer.flipX ? -1f : 1f;
-            Vector2 knockback = new Vector2(facing * 3f, 2f);
+            Vector2 knockback = new Vector2(facing * config.knockbackForce, config.knockbackUpwardForce);
             damageable.TakeDamage(config.attackDamage, knockback);
         }
     }

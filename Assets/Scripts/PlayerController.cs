@@ -23,6 +23,7 @@ public class PlayerController : MonoBehaviour
     // 缓存引用
     private Collider2D cachedCollider;
     private PlayerDash cachedPlayerDash;
+    private PlayerHealth playerHealth;
 
     // ============================================================
     // 生命周期
@@ -34,6 +35,7 @@ public class PlayerController : MonoBehaviour
         spriteRenderer = GetComponent<SpriteRenderer>();
         cachedCollider = GetComponent<Collider2D>();
         cachedPlayerDash = GetComponent<PlayerDash>();
+        playerHealth = GetComponent<PlayerHealth>();
 
         if (rb == null) rb = GetComponent<Rigidbody2D>();
         if (config == null)
@@ -46,6 +48,13 @@ public class PlayerController : MonoBehaviour
 
     private void Update()
     {
+        // 硬直中不读取输入，让击退飞完
+        if (playerHealth != null && playerHealth.IsStunned)
+        {
+            moveInput = Vector2.zero;
+            return;
+        }
+
         // 逐帧读取输入（Update 比 FixedUpdate 更及时）
         moveInput = input.Player.Move.ReadValue<Vector2>();
     }
@@ -53,6 +62,15 @@ public class PlayerController : MonoBehaviour
     private void FixedUpdate()
     {
         CheckGrounded();
+
+        // 硬直中：不处理主动移动，让击退 velocity 自然飞行
+        if (playerHealth != null && playerHealth.IsStunned)
+        {
+            FlipSpriteTowardsMovement();
+            ClampFallSpeed();
+            return;
+        }
+
         FlipSpriteTowardsMovement();
         HandleHorizontalMovement();
         ClampFallSpeed();
@@ -133,6 +151,21 @@ public class PlayerController : MonoBehaviour
     {
         if (moveInput.x != 0f)
             spriteRenderer.flipX = moveInput.x < 0f;
+    }
+
+    // ============================================================
+    // 外部接口（供 PlayerHealth 受击时立即锁定输入）
+    // ============================================================
+
+    /// <summary>
+    /// 立即停止移动输入，不等下一帧 Update。
+    /// 由 PlayerHealth 在受击硬直开始时调用。
+    /// </summary>
+    public void ForceStopMovement()
+    {
+        moveInput = Vector2.zero;
+        if (rb != null)
+            rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
     }
 
     // ============================================================

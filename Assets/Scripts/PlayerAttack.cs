@@ -168,16 +168,7 @@ public class PlayerAttack : MonoBehaviour
         canCancelToDash = false;
         hitTargets.Clear();
 
-        Debug.Log($"[PlayerAttack] playerAnimator={(playerAnimator != null ? "OK" : "NULL")}", this);
-        if (playerAnimator != null)
-        {
-            playerAnimator.TriggerAttack();
-            Debug.Log("[PlayerAttack] TriggerAttack called", this);
-        }
-        else
-        {
-            Debug.LogError("[PlayerAttack] playerAnimator is NULL!", this);
-        }
+        playerAnimator?.TriggerAttack();
     }
 
     private void EndAttack()
@@ -225,8 +216,9 @@ public class PlayerAttack : MonoBehaviour
             if (damageable != null)
             {
                 float facing = spriteRenderer != null && spriteRenderer.flipX ? -1f : 1f;
-                Vector2 knockback = new Vector2(facing * config.knockbackForce, 1f);
+                Vector2 knockback = new Vector2(facing * config.knockbackForce, config.knockbackUpwardForce);
                 damageable.TakeDamage(config.damage, knockback);
+                Debug.Log($"玩家攻击 → {hit.name}，造成 {config.damage} 伤害");
             }
         }
     }

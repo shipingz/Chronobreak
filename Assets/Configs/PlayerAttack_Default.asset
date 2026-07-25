@@ -16,10 +16,11 @@ MonoBehaviour:
   hitboxForwardOffset: 0.8
   hitboxVerticalOffset: 0
   damage: 20
-  knockbackForce: 5
+  knockbackForce: 4
+  knockbackUpwardForce: 3.02
   hitDelay: 0.15
   hitActiveDuration: 0.1
   cooldown: 0.2
   enemyLayer:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 384

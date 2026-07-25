@@ -20,8 +20,11 @@ public class PlayerAttackConfig : ScriptableObject
     [Tooltip("每次攻击的伤害值")]
     public int damage = 20;
 
-    [Tooltip("命中击退力度")]
+    [Tooltip("命中横向击退力度")]
     public float knockbackForce = 5f;
+
+    [Tooltip("命中向上击退力度")]
+    public float knockbackUpwardForce = 3f;
 
     [Header("时序")]
     [Tooltip("按下攻击键到判定框激活的延迟（秒）")]

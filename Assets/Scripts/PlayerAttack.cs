@@ -32,6 +32,8 @@ public class PlayerAttack : MonoBehaviour
 
     private PlayerAnimator playerAnimator;
     private PlayerDash playerDash;
+    private PlayerFSM playerFSM;
+    private PlayerJump playerJump;
     private SpriteRenderer spriteRenderer;
     private Collider2D cachedCollider;
     private InputSystem_Actions input;
@@ -59,6 +61,8 @@ public class PlayerAttack : MonoBehaviour
     {
         playerAnimator = GetComponent<PlayerAnimator>();
         playerDash = GetComponent<PlayerDash>();
+        playerFSM = GetComponent<PlayerFSM>();
+        playerJump = GetComponent<PlayerJump>();
         spriteRenderer = GetComponent<SpriteRenderer>();
         cachedCollider = GetComponent<Collider2D>();
         playerHealth = GetComponent<PlayerHealth>();
@@ -176,6 +180,8 @@ public class PlayerAttack : MonoBehaviour
         canCancelToDash = false;
         hitTargets.Clear();
 
+        playerFSM?.TransitionTo(PlayerState.Attack);
+
         playerAnimator?.TriggerAttack();
     }
 
@@ -186,6 +192,10 @@ public class PlayerAttack : MonoBehaviour
         canCancelToDash = false;
         cooldownTimer = config.cooldown;
         hitTargets.Clear();
+
+        // 通知 FSM：回到 Idle 或 Fall（取决于是否在地面）
+        bool grounded = playerJump != null && playerJump.IsGrounded();
+        playerFSM?.TransitionTo(grounded ? PlayerState.Idle : PlayerState.Fall);
     }
 
     // ============================================================
@@ -199,6 +209,10 @@ public class PlayerAttack : MonoBehaviour
         canCancelToDash = false;
         cooldownTimer = 0f; // 冲刺取消不罚冷却
         hitTargets.Clear();
+
+        // 通知 FSM：回到 Idle 或 Fall
+        bool grounded = playerJump != null && playerJump.IsGrounded();
+        playerFSM?.TransitionTo(grounded ? PlayerState.Idle : PlayerState.Fall);
     }
 
     // ============================================================

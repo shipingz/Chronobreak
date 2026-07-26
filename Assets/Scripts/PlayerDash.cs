@@ -19,6 +19,8 @@ public class PlayerDash : MonoBehaviour
     // 碰撞体缓存
     private Collider2D cachedCollider;
     private SpriteRenderer cachedSpriteRenderer;
+    private PlayerFSM playerFSM;
+    private PlayerJump playerJump;
     private PlayerHealth playerHealth;
 
     // 冲刺状态
@@ -55,6 +57,8 @@ public class PlayerDash : MonoBehaviour
         cachedSpriteRenderer = GetComponent<SpriteRenderer>();
 
         originalGravity = rb.gravityScale;
+        playerFSM = GetComponent<PlayerFSM>();
+        playerJump = GetComponent<PlayerJump>();
         playerHealth = GetComponent<PlayerHealth>();
     }
 
@@ -143,6 +147,8 @@ public class PlayerDash : MonoBehaviour
         rb.linearVelocity = new Vector2(dashDirection * DashSpeed, 0f);
         triggerActivatedThisDash = false;
 
+        playerFSM?.TransitionTo(PlayerState.Dash);
+
         // 先保存原始 isTrigger，但不立即修改
         // 等第一次 UpdateDash 确认前方没墙之后再开——否则会穿进墙体
         if (cachedCollider != null)
@@ -196,6 +202,10 @@ public class PlayerDash : MonoBehaviour
 
         // 保留少量水平惯性（防止突然卡死）
         rb.linearVelocity = new Vector2(rb.linearVelocity.x * config.dashEndInertia, 0f);
+
+        // 通知 FSM：回到 Idle 或 Fall
+        bool grounded = playerJump != null && playerJump.IsGrounded();
+        playerFSM?.TransitionTo(grounded ? PlayerState.Idle : PlayerState.Fall);
     }
 
     // ============================================================

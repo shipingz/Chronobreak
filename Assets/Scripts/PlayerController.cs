@@ -23,6 +23,8 @@ public class PlayerController : MonoBehaviour
     // 缓存引用
     private Collider2D cachedCollider;
     private PlayerDash cachedPlayerDash;
+    private PlayerAttack cachedPlayerAttack;
+    private PlayerFSM playerFSM;
     private PlayerHealth playerHealth;
 
     // ============================================================
@@ -35,6 +37,8 @@ public class PlayerController : MonoBehaviour
         spriteRenderer = GetComponent<SpriteRenderer>();
         cachedCollider = GetComponent<Collider2D>();
         cachedPlayerDash = GetComponent<PlayerDash>();
+        cachedPlayerAttack = GetComponent<PlayerAttack>();
+        playerFSM = GetComponent<PlayerFSM>();
         playerHealth = GetComponent<PlayerHealth>();
 
         if (rb == null) rb = GetComponent<Rigidbody2D>();
@@ -149,6 +153,9 @@ public class PlayerController : MonoBehaviour
 
     private void FlipSpriteTowardsMovement()
     {
+        // 朝向锁定状态（Dash/Attack）禁止翻转
+        if (playerFSM != null && playerFSM.IsFacingLocked) return;
+
         if (moveInput.x != 0f)
             spriteRenderer.flipX = moveInput.x < 0f;
     }

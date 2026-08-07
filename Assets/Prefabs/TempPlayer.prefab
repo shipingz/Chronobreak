@@ -20,6 +20,7 @@ GameObject:
   - component: {fileID: 5302020247983178637}
   - component: {fileID: 666020373619725108}
   - component: {fileID: 4384043974517163822}
+  - component: {fileID: 615136554932787040}
   m_Layer: 6
   m_Name: TempPlayer
   m_TagString: Untagged
@@ -293,3 +294,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8926cad7fbf82d4da3bbb82dbb783a8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerFSM
+--- !u!114 &615136554932787040
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8544475719277809006}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 469c7e48a98029349b6ef99bf2af9cab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Chronobreak::PlayerRewind

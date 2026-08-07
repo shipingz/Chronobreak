@@ -13,5 +13,8 @@
     "autoReferenced": true,
     "defineConstraints": [],
     "versionDefines": [],
+    "internalsVisibleTo": [
+        "Chronobreak.Tests"
+    ],
     "noEngineReferences": false
 }

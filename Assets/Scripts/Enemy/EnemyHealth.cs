@@ -95,15 +95,16 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         if (animator != null)
             animator.SetTrigger("isDead");
 
-        // 读取死亡动画时长，播完后立刻销毁，不留最后一帧
-        float destroyDelay = 0.7f; // 默认保底
+        // 读取死亡动画时长，播完后稍作停留再销毁，保证最后一帧完全定格
+        // （+0.1s 缓冲：避免动画最后一帧刚播完就被销毁，产生"截断"感）
+        float destroyDelay = 0.8f; // 默认保底（0.7 + 0.1）
         if (animator != null && animator.runtimeAnimatorController != null)
         {
             foreach (AnimationClip clip in animator.runtimeAnimatorController.animationClips)
             {
                 if (clip.name.ToLower().Contains("death"))
                 {
-                    destroyDelay = clip.length;
+                    destroyDelay = clip.length + 0.1f;
                     break;
                 }
             }

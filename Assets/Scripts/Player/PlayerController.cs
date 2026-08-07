@@ -165,6 +165,11 @@ public class PlayerController : MonoBehaviour
     // ============================================================
 
     /// <summary>
+    /// 当前是否在地面（CheckGrounded 的缓存值，供回溯快照 T-021 取用）
+    /// </summary>
+    public bool IsGrounded => isGrounded;
+
+    /// <summary>
     /// 立即停止移动输入，不等下一帧 Update。
     /// 由 PlayerHealth 在受击硬直开始时调用。
     /// </summary>

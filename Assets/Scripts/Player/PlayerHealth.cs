@@ -217,6 +217,9 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     {
         if (!isDead) return;
 
+        // 决策 5：重生清空全部回溯缓冲（重生后按 R 无反应，验收项）
+        RewindManager.Instance?.ClearAll();
+
         // 搬回重生点
         transform.position = spawnPoint;
 

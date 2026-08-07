@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 // 显式声明（与 asmdef 的 internalsVisibleTo 字段双保险）：
 // 让 Edit Mode 测试程序集能访问 internal 成员（RecordStep / GetBuffer）。
@@ -74,6 +75,26 @@ public class RewindManager : MonoBehaviour
     private void FixedUpdate()
     {
         RecordStep();
+    }
+
+    // ============================================================
+    // 切场景清空（决策 5）
+    // ============================================================
+
+    private void OnEnable()
+    {
+        // 决策 5：切场景清空全部缓冲，避免跨场景残留旧时间线
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    private void OnDisable()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        ClearAll();
     }
 
     /// <summary>

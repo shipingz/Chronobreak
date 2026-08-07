@@ -150,4 +150,34 @@ public class RewindManagerTests
         Assert.AreEqual(RewindManager.BufferCapacity + 1f, buffer.Read(0).position.x); // 最新 = 第 301 帧
         Assert.AreEqual(2f, buffer.Read(RewindManager.BufferCapacity - 1).position.x); // 最旧 = 第 2 帧（第 1 帧被覆盖）
     }
+
+    [Test]
+    public void SceneLoaded_ClearsAllBuffers()
+    {
+        // 决策 5：切场景清空全部缓冲。Edit Mode 不真实加载场景，
+        // 用反射触发私有 OnSceneLoaded，验证事件订阅链路存在且生效。
+        var a = new FakeRewindable();
+        var b = new FakeRewindable();
+        manager.Register(a);
+        manager.Register(b);
+        manager.RecordStep();
+        manager.RecordStep();
+
+        var method = typeof(RewindManager).GetMethod(
+            "OnSceneLoaded",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.IsNotNull(method, "OnSceneLoaded 私有方法应存在（被 sceneLoaded 订阅）");
+        method.Invoke(manager, new object[]
+        {
+            default(UnityEngine.SceneManagement.Scene),
+            UnityEngine.SceneManagement.LoadSceneMode.Single
+        });
+
+        Assert.AreEqual(0, manager.GetBuffer(a).Count);
+        Assert.AreEqual(0, manager.GetBuffer(b).Count);
+
+        // 清空后录制恢复正常
+        manager.RecordStep();
+        Assert.AreEqual(1, manager.GetBuffer(a).Count);
+    }
 }

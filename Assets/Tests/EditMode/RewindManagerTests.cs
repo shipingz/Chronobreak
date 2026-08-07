@@ -3,12 +3,16 @@ using UnityEngine;
 
 /// <summary>
 /// 测试用 IRewindable 假对象：每次 Capture 生成带递增序号位置（1,2,3...）的快照，
-/// 用于断言录制帧序与覆盖行为。
+/// 用于断言录制帧序与覆盖行为；记录 ApplySnapshot / OnRewindStart / OnRewindEnd 调用。
 /// </summary>
 public class FakeRewindable : IRewindable
 {
     public bool IsRewinding { get; set; }
     public int CaptureCount { get; private set; }
+    public int ApplyCount { get; private set; }
+    public int RewindStartCount { get; private set; }
+    public int RewindEndCount { get; private set; }
+    public FrameSnapshot LatestApplied { get; private set; }
     private int sequence;
 
     public FrameSnapshot CaptureSnapshot()
@@ -21,9 +25,15 @@ public class FakeRewindable : IRewindable
             true);
     }
 
-    public void ApplySnapshot(FrameSnapshot snapshot) { }
-    public void OnRewindStart() { }
-    public void OnRewindEnd() { }
+    public void ApplySnapshot(FrameSnapshot snapshot)
+    {
+        ApplyCount++;
+        LatestApplied = snapshot;
+    }
+
+    public void OnRewindStart() => RewindStartCount++;
+
+    public void OnRewindEnd() => RewindEndCount++;
 }
 
 /// <summary>
@@ -179,5 +189,124 @@ public class RewindManagerTests
         // 清空后录制恢复正常
         manager.RecordStep();
         Assert.AreEqual(1, manager.GetBuffer(a).Count);
+    }
+
+    // ============================================================
+    // 回放管线（T-023）
+    // ============================================================
+
+    [Test]
+    public void StartRewind_EmptyBuffer_DoesNotStart()
+    {
+        // 无注册对象 → 不启动回溯（防御）
+        manager.StartRewind();
+
+        Assert.IsFalse(manager.IsRewinding);
+    }
+
+    [Test]
+    public void RewindStep_AppliesFramesNewestToOldest()
+    {
+        var a = new FakeRewindable();
+        manager.Register(a);
+        manager.RecordStep(); // 帧 1
+        manager.RecordStep(); // 帧 2
+        manager.RecordStep(); // 帧 3
+
+        manager.StartRewind();
+
+        Assert.IsTrue(manager.IsRewinding);
+        Assert.IsTrue(a.IsRewinding);
+        Assert.AreEqual(1, a.RewindStartCount);
+
+        manager.RewindStep(); // 第 1 步：最新帧（3）
+        Assert.AreEqual(3f, a.LatestApplied.position.x);
+
+        manager.RewindStep(); // 第 2 步：前一帧（2）
+        Assert.AreEqual(2f, a.LatestApplied.position.x);
+        Assert.AreEqual(2, a.ApplyCount);
+    }
+
+    [Test]
+    public void RewindStep_AtOldestFrame_Clamps()
+    {
+        var a = new FakeRewindable();
+        manager.Register(a);
+        manager.RecordStep(); // 帧 1
+        manager.RecordStep(); // 帧 2
+        manager.RecordStep(); // 帧 3
+
+        manager.StartRewind();
+
+        for (int i = 0; i < 5; i++)
+            manager.RewindStep(); // 超过 3 帧，应停在最旧帧
+
+        Assert.AreEqual(1f, a.LatestApplied.position.x); // 最旧帧
+    }
+
+    [Test]
+    public void StopRewind_ResumesRecording()
+    {
+        var a = new FakeRewindable();
+        manager.Register(a);
+        manager.RecordStep(); // 帧 1
+
+        manager.StartRewind();
+        manager.RewindStep();
+        manager.StopRewind();
+
+        Assert.IsFalse(manager.IsRewinding);
+        Assert.IsFalse(a.IsRewinding);
+        Assert.AreEqual(1, a.RewindEndCount);
+
+        // 停止后录制恢复
+        manager.RecordStep();
+        Assert.AreEqual(2, manager.GetBuffer(a).Count);
+    }
+
+    [Test]
+    public void StopRewind_TruncatesConsumedFrames()
+    {
+        // 决策 4 回归：停止回溯必须截断被消费的"旧未来"帧，
+        // 否则二次回溯会闪现到撤销前的位置（用户报告的实际 bug）。
+        var a = new FakeRewindable();
+        manager.Register(a);
+        for (int i = 1; i <= 6; i++)
+            manager.RecordStep(); // 帧 1..6
+
+        manager.StartRewind();
+        manager.RewindStep(); // 应用帧 6
+        manager.RewindStep(); // 应用帧 5
+        manager.StopRewind();
+
+        // 消费了 2 帧 → 保留 4 帧，且最新 = 停止帧（帧 4）
+        var buffer = manager.GetBuffer(a);
+        Assert.AreEqual(4, buffer.Count);
+        Assert.AreEqual(4f, buffer.Read(0).position.x);
+
+        // 二次回溯：第一步应用的最新帧 = 停止帧（帧 4），而不是旧未来（帧 5/6）
+        manager.StartRewind();
+        manager.RewindStep();
+        Assert.AreEqual(4f, a.LatestApplied.position.x);
+        manager.StopRewind();
+    }
+
+    [Test]
+    public void StopRewind_ClampedToOldest_TruncatesAll()
+    {
+        // 回溯到底（clamp 最旧）的对象：rewindOffset 大于 count，截断全部帧（清空），不抛异常
+        var a = new FakeRewindable();
+        manager.Register(a);
+        manager.RecordStep(); // 帧 1
+        manager.RecordStep(); // 帧 2
+        manager.RecordStep(); // 帧 3
+
+        manager.StartRewind();
+        for (int i = 0; i < 10; i++)
+            manager.RewindStep(); // 超过 3 帧，clamp 在最旧
+        manager.StopRewind();
+
+        Assert.AreEqual(0, manager.GetBuffer(a).Count); // 全部消费 → 清空
+        Assert.DoesNotThrow(() => manager.StopRewind()); // 重复 Stop 幂等安全
     }
 }

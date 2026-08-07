@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 
 // 显式声明（与 asmdef 的 internalsVisibleTo 字段双保险）：
@@ -27,13 +28,20 @@ public class RewindManager : MonoBehaviour
 
     private static RewindManager instance;
 
+    /// <summary>是否正在退出 Play Mode / 应用退出（退出期间禁止重建单例，见 Instance getter）</summary>
+    private static bool applicationIsQuitting;
+
     /// <summary>
     /// 单例访问：首次访问时自动创建 GameObject（场景无需手动挂载 RewindManager）。
+    /// 退出保护：applicationIsQuitting 为 true（退出 Play Mode / 应用退出流程）时返回 null，
+    /// 防止场景关闭期间其他对象的 OnDestroy 访问本属性触发"自愈重建"——
+    /// 重建会制造场景关闭检查（"Some objects were not cleaned up"）能看到的残留对象。
     /// </summary>
     public static RewindManager Instance
     {
         get
         {
+            if (applicationIsQuitting) return null;
             if (instance == null)
             {
                 GameObject go = new GameObject("RewindManager");
@@ -44,10 +52,126 @@ public class RewindManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 每次进入 Play Mode 前重置静态状态（编辑器域重载/重复进入 Play Mode 时，
+    /// 静态字段在编辑会话间保留，需重置保证干净创建）。
+    /// </summary>
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetRuntimeStatics()
+    {
+        applicationIsQuitting = false;
+        instance = null;
+    }
+
+    /// <summary>是否存在活跃实例（只读判断，不触发创建——供 OnDestroy 等退出流程安全使用）</summary>
+    public static bool Exists => instance != null;
+
+    /// <summary>
+    /// 置位退出保护：供编辑器退出流程（ExitingPlayMode，早于 Application.quitting 事件）
+    /// 调用，确保场景关闭期间 Instance getter 返回 null、绝不重建。
+    /// </summary>
+    public static void MarkApplicationQuitting()
+    {
+        applicationIsQuitting = true;
+    }
+
+    /// <summary>退出流程开始：置位退出保护（退出 Play Mode / 应用退出都会触发 Application.quitting）</summary>
+    private static void OnApplicationQuitting()
+    {
+        applicationIsQuitting = true;
+    }
+
     private readonly Dictionary<IRewindable, RingBuffer<FrameSnapshot>> buffers = new();
 
     /// <summary>已注册对象数（调试用）</summary>
     public int RegisteredCount => buffers.Count;
+
+    // ============================================================
+    // 回放状态（T-023）
+    // ============================================================
+
+    /// <summary>当前是否正在回溯（各组件查询此标记，如 PlayerHealth 免疫伤害 T-029）</summary>
+    public bool IsRewinding { get; private set; }
+
+    /// <summary>已回退的帧数（0 = 最新帧；每 RewindStep +1）</summary>
+    private int rewindOffset;
+
+    // ============================================================
+    // 回放管线（T-023）
+    // ============================================================
+
+    /// <summary>
+    /// 开始回溯：遍历全部对象调 OnRewindStart（PlayerRewind 冻结控制组件）。
+    /// 防御：空缓冲 / 已在回溯中 → 直接返回。
+    /// </summary>
+    public void StartRewind()
+    {
+        if (IsRewinding) return;
+        if (buffers.Count == 0) return;
+
+        IsRewinding = true;
+        rewindOffset = 0;
+
+        foreach (KeyValuePair<IRewindable, RingBuffer<FrameSnapshot>> pair in buffers)
+        {
+            pair.Key.IsRewinding = true;
+            pair.Key.OnRewindStart();
+        }
+    }
+
+    /// <summary>
+    /// 回放一步（决策 1/2：每 FixedUpdate 退一帧，1:1）：从最新往旧读一帧并应用。
+    /// 各对象缓冲帧数可能不同，用 clamp 停在各自最旧帧（决策：允许部分回溯）。
+    /// </summary>
+    internal void RewindStep()
+    {
+        foreach (KeyValuePair<IRewindable, RingBuffer<FrameSnapshot>> pair in buffers)
+        {
+            RingBuffer<FrameSnapshot> buffer = pair.Value;
+            if (buffer.Count == 0) continue;
+
+            int offset = Mathf.Min(rewindOffset, buffer.Count - 1); // 退到最旧帧后停住
+            pair.Key.ApplySnapshot(buffer.Read(offset));
+        }
+        rewindOffset++;
+    }
+
+    /// <summary>
+    /// 停止回溯：恢复对象控制、截断被消费的"旧未来"帧（决策 4）、重置偏移。
+    /// 停止帧血量恢复、重叠弹飞+无敌、SyncTransforms 属 T-028 收尾，本次不处理。
+    /// </summary>
+    public void StopRewind()
+    {
+        if (!IsRewinding) return;
+
+        IsRewinding = false;
+
+        foreach (KeyValuePair<IRewindable, RingBuffer<FrameSnapshot>> pair in buffers)
+        {
+            // 决策 4：丢弃被回溯消费的帧（旧时间线），防止二次回溯闪现到撤销前的位置。
+            // min 防越界：回溯到底（clamp 最旧）的对象 count 小于全局 rewindOffset，截断全部。
+            pair.Value.Truncate(Mathf.Min(rewindOffset, pair.Value.Count));
+            pair.Key.IsRewinding = false;
+            pair.Key.OnRewindEnd();
+        }
+
+        rewindOffset = 0;
+    }
+
+    /// <summary>输入检测（T-023）：按住 R 回溯，松开停止。直接读键盘，不改 .inputactions 资产。</summary>
+    private void Update()
+    {
+        if (Keyboard.current == null) return;
+
+        if (Keyboard.current[Key.R].isPressed)
+        {
+            if (!IsRewinding) StartRewind();
+        }
+        else if (IsRewinding)
+        {
+            StopRewind();
+        }
+    }
 
     /// <summary>注册一个可回溯对象，为其分配独立缓冲（重复注册幂等）</summary>
     public void Register(IRewindable target)
@@ -71,10 +195,13 @@ public class RewindManager : MonoBehaviour
             buffer.Clear();
     }
 
-    /// <summary>每物理帧录制全部已注册对象（决策 1：FixedUpdate 50Hz；决策 6：暂停时自然停摆）</summary>
+    /// <summary>每物理帧：回溯中 → 回放一步；否则 → 录制一步（决策 6：暂停时自然停摆）</summary>
     private void FixedUpdate()
     {
-        RecordStep();
+        if (IsRewinding)
+            RewindStep();
+        else
+            RecordStep();
     }
 
     // ============================================================
@@ -85,11 +212,14 @@ public class RewindManager : MonoBehaviour
     {
         // 决策 5：切场景清空全部缓冲，避免跨场景残留旧时间线
         SceneManager.sceneLoaded += OnSceneLoaded;
+        // 退出保护：退出 Play Mode / 应用退出时置位，禁止 Instance getter 重建
+        Application.quitting += OnApplicationQuitting;
     }
 
     private void OnDisable()
     {
         SceneManager.sceneLoaded -= OnSceneLoaded;
+        Application.quitting -= OnApplicationQuitting;
     }
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -104,17 +234,6 @@ public class RewindManager : MonoBehaviour
     {
         if (instance == this)
             instance = null;
-    }
-
-    /// <summary>
-    /// 退出 Play Mode / 应用退出前销毁自身：
-    /// 本对象是运行中创建的 DontDestroyOnLoad 对象，Unity 6 场景关闭检查会对其报警
-    /// （"Some objects were not cleaned up"），在退出前显式销毁可消除该警告。
-    /// </summary>
-    private void OnApplicationQuit()
-    {
-        if (instance == this)
-            DestroyImmediate(gameObject);
     }
 
     /// <summary>
